@@ -6,3 +6,4 @@ node_modules/
 *.tsbuildinfo
 outputs/
 .DS_Store
+supabase/.temp/
