@@ -1,6 +1,6 @@
 # Makhzan · مخزن
 
-Private rice and soap warehouse operations: GitHub source, Supabase database/authentication, and Vercel deployment. The original FIFO/accounting engine and interactive workflows are preserved.
+Warehouse operations for independent businesses: GitHub source, Supabase database/authentication, and Vercel deployment. The original FIFO/accounting engine and interactive workflows are preserved.
 
 ## What it handles
 
@@ -16,19 +16,20 @@ Private rice and soap warehouse operations: GitHub source, Supabase database/aut
 
 ## Privacy
 
-The Vercel project must keep Authentication Protection enabled for **all deployments**. Makhzan additionally requires Supabase email authentication. Only the verified email in the server-side `MAKHZAN_OWNER_EMAIL` setting is accepted. The database independently enforces its owner allowlist and row-level security. Other signed-in Supabase users and anonymous callers cannot read or write warehouse data.
+The production URL is publicly reachable without a Vercel account. Every email account has one private business workspace; there is no shared public warehouse. Supabase email confirmation is required before access. The API validates the current Supabase user and scopes reads to that user ID. Database row-level policies independently restrict SELECT, INSERT, and UPDATE to the signed-in account, including ownership checks on updated rows. Anonymous sessions cannot access warehouse records. The original owner's user ID and records are unchanged.
 
-No service-role key is needed or exposed. Only a publishable Supabase key is used. Production settings live in Vercel; secrets and `.env.local` are excluded from Git. Preview deployments are disabled rather than sharing the production database with branch previews.
+This release does not include staff invitations, shared team workspaces, or multiple businesses per account. Use separate accounts for separate businesses. No service-role key is needed or exposed. Only a publishable Supabase key is used. Preview deployments remain disabled, source stays private, and generated deployment URLs remain protected by Vercel Standard Protection.
 
 ## Local setup
 
 1. Use Node.js 22.13+ and run `npm ci`.
-2. Link the selected Vercel project and configure the three variable names in `.env.example`. For a new machine, pull appropriate development configuration via Vercel without printing values. Do not use production secrets in previews.
-3. Apply the versioned migrations under `supabase/migrations/` to a dedicated Supabase project. Grant the owner's lowercased verified email using the parameterized example in `supabase/owner-access.sql`.
-4. Configure Supabase Auth's Site URL to the stable Vercel domain, and allow the exact `/auth/callback` URL. Add a loopback callback separately if local sign-in is needed.
-5. `npm run dev`, then sign in from `/login` using the authorized owner email.
+2. Configure the two public variable names in `.env.example`. Pull the appropriate environment configuration without printing or committing credentials.
+3. Apply the versioned migrations under `supabase/migrations/` to the dedicated Supabase project. The latest migration replaces the legacy owner allowlist with account ownership; do not add new users to `makhzan_access`.
+4. Enable Supabase email signup with email confirmation. Configure the Auth Site URL to the stable Vercel domain and allow the exact `/auth/callback` URL. Add a loopback callback separately for local sign-in.
+5. **Configure custom SMTP before inviting other businesses.** Supabase's default mail service only sends to project team addresses. Public registration cannot complete until a verified sender and delivery service are configured in Authentication → Emails → SMTP Settings. Keep email confirmation on. Never commit SMTP credentials.
+6. `npm run dev`, then create or sign into a workspace from `/login`.
 
-The sign-in email is sent only when the user submits the login form. It uses PKCE and a one-time email link, not a stored application password. The API validates the session against Supabase Auth before reading or modifying data.
+The sign-in email is sent only when someone submits the login form. A new email creates an account through the same one-time link flow as an existing account. It uses PKCE; open the email link in the browser that requested it. The API returns a clear unavailable message if email delivery is not configured for new accounts, rather than claiming an email was sent.
 
 ## Verification
 
@@ -53,4 +54,4 @@ This version retains posted records and does not reverse posted movements, refun
 
 ## Deployment
 
-The private GitHub repository's main branch is connected to the dedicated Makhzan Vercel project. Production deployments build with `npm ci` and `npm run build`; all deployment URLs remain protected. Database migrations are reviewed and applied separately before releasing source that needs them. No original PRID/payroll project is modified by this migration.
+The private GitHub repository's main branch is connected to the dedicated Makhzan Vercel project. Production deployments build with `npm ci` and `npm run build`; the stable production domain is public and generated deployment URLs remain protected. Database migrations are reviewed and applied separately before releasing source that needs them. No original PRID/payroll project is modified by this migration.
