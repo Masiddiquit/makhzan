@@ -54,4 +54,4 @@ This version retains posted records and does not reverse posted movements, refun
 
 ## Deployment
 
-The private GitHub repository's main branch is connected to the dedicated Makhzan Vercel project. Production deployments build with `npm ci` and `npm run build`; the stable production domain is public and generated deployment URLs remain protected. Database migrations are reviewed and applied separately before releasing source that needs them. No original PRID/payroll project is modified by this migration.
+The GitHub repository's main branch is connected to the dedicated Makhzan Vercel project. Production deployments build with `npm ci` and `npm run build`; the stable production domain is public and generated deployment URLs remain protected. Database migrations are reviewed and applied separately before releasing source that needs them.
