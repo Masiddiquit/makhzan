@@ -1,5 +1,6 @@
 import {cookies} from 'next/headers';
 import {createClient} from '../../../../lib/supabase/server';
+import {createEmailClient} from '../../../../lib/supabase/email';
 export const dynamic='force-dynamic';
 const reply=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'private, no-store'}});
 const validEmail=(email:string)=>email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -43,13 +44,13 @@ export async function POST(request:Request){
   }
   const callback=new URL('/auth/callback',request.url).href;
   if(action==='recover'){
-   const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:callback});
+   const {error}=await createEmailClient().auth.resetPasswordForEmail(email,{redirectTo:callback});
    if(error){
     if(error.status===429)return reply({error:'The email service is temporarily rate limited. Wait before requesting another setup link. Password sign-in does not send an email.'},429);
     return reply({error:'The password-setup email could not be sent. Please try again later.'},503);
    }
    (await cookies()).set('makhzan-password-flow','1',{httpOnly:true,secure:new URL(request.url).protocol==='https:',sameSite:'lax',path:'/',maxAge:3600});
-   return reply({ok:true,message:'If an account exists for this email, a password-setup link has been sent. Open it in this browser to choose your password.'});
+   return reply({ok:true,message:'If an account exists for this email, a password-setup link has been sent. Open the latest link to choose your password. It can be opened in your email app’s browser.'});
   }
   const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:callback}});
   if(error){
@@ -58,6 +59,7 @@ export async function POST(request:Request){
    if(error.code==='weak_password')return reply({error:'Choose a stronger password with a mix of letters, numbers, and symbols.'},400);
    return reply({error:'The account could not be created or the confirmation email could not be sent. Please try again later.'},503);
   }
+  if(!data.session&&Array.isArray(data.user?.identities)&&data.user.identities.length===0)return reply({ok:true,nextAction:'recover',message:'No new account or password was created. If you already registered this email, choose Set or reset password to verify your email and choose a password for the existing account.'});
   if(data.session&&verified(data.user))return reply({ok:true,redirect:'/'});
   return reply({ok:true,message:'Check your email to confirm your account once. Then sign in with your email and password. If you already have an account, use Sign in or Set or reset password.'});
  }catch{return reply({error:'Account services are temporarily unavailable. Please try again.'},503);}
